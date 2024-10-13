@@ -2,15 +2,26 @@
   "name": "testing-library-reusable-selectors",
   "version": "0.0.0",
   "description": "A package to add reusable and custom selectors to the screen object with ease!",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/auberdream/testing-library-reusable-selectors"
+  },
   "scripts": {
+    "build": "tsup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Ellie Wem",
   "license": "ISC",
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
     "ts-node": "^10.9.2",
+    "tsup": "^8.3.0",
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
