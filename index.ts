@@ -24,30 +24,30 @@ import {
   SelectorMatcherOptions,
 } from "@testing-library/dom";
 
-type RegisterFunctionReturn<TName extends string, TArgs extends any | any[]> = {
-  [K in `get${TName}` | `getAll${TName}s`]: (
+type GenerateFunctionReturn<TName extends string, TArgs extends any | any[]> = {
+  [K in `get${TName}` | `getAll${TName}`]: (
     container: HTMLElement,
     options?: TArgs
   ) => HTMLElement;
 } & {
-  [K in `find${TName}` | `findAll${TName}s`]: (
+  [K in `find${TName}` | `findAll${TName}`]: (
     container: HTMLElement,
     options?: TArgs
   ) => Promise<HTMLElement | null>;
 } & {
-  [K in `query${TName}` | `queryAll${TName}s`]: (
+  [K in `query${TName}` | `queryAll${TName}`]: (
     container: HTMLElement,
     options?: TArgs
   ) => HTMLElement | null;
 };
 
-type RegisterFunctionDefaultArgs = {
+type GenerateFunctionDefaultArgs = {
   ByRole: ByRoleOptions;
   ByLabelText: SelectorMatcherOptions;
   ByDisplayValue: MatcherOptions;
 };
 
-type RegisterFunctionTypes =
+type GenerateFunctionTypes =
   | "ByAltText"
   | "ByDisplayValue"
   | "ByLabelText"
@@ -73,8 +73,8 @@ type MatcherFunctionOptions<TArgs extends any | any[]> = {
   convertOptions?: (args?: TArgs) => MatcherOptions;
 };
 
-type RegisterFunctionOptions<
-  TType extends RegisterFunctionTypes,
+type GenerateFunctionOptions<
+  TType extends GenerateFunctionTypes,
   TArgs extends any | any[]
 > = TType extends "ByRole"
   ? ByRoleFunctionOptions<TArgs>
@@ -90,15 +90,33 @@ type RegisterFunctionOptions<
   ? MatcherFunctionOptions<TArgs>
   : never;
 
-/* ---------------------------------- Main ---------------------------------- */
-export const registerTestingFunction = <
-  TType extends RegisterFunctionTypes,
+/**
+ *@description a function that creates 6 functions so that selectors are reusable but dynamic enough to add options or custom arguments
+ *
+ * @param type the type of matcher, eg 'ByRole' | 'ByLabelText' | 'ByText'
+ * @param options an object that contains the name of the function, the first argument of that function (the matcher)
+ * and a function to convert the second argument of the function to the correct type
+ * @returns 6 functions that match the RTL API but the functions are suffixed by the name of the function (defined in
+ * the options)
+ *
+ * @example
+ * ```
+ * const { queryButton, queryAllButton, find..., get...} = registerTestingFunction('ByRole', { name: 'Button', matcher: 'button' })
+ * queryButton({ name: 'my button name' }) // note the arguments default to the options defined in the ByRole function from RTL
+ *
+ * const { queryAnotherButton, ...rest} = registerTestingFunction('ByRole', { name: 'AnotherButton', matcher: 'button', convertOptions: (name: string) => ({ name }) })
+ * queryAnotherButton('another button name') // note the arguments changed by convertOptions
+ * ```
+ *
+ */
+export const generateTestingFunctions = <
+  TType extends GenerateFunctionTypes,
   TName extends string,
   TArgs extends any | any[]
 >(
   type: TType,
-  options: RegisterFunctionOptions<TType, TArgs>
-): RegisterFunctionReturn<TName, TArgs> => {
+  options: GenerateFunctionOptions<TType, TArgs>
+): GenerateFunctionReturn<TName, TArgs> => {
   switch (type) {
     case "ByRole":
       return getTestingFunctionsByRole(options as ByRoleFunctionOptions<TArgs>);
@@ -123,75 +141,75 @@ export const registerTestingFunction = <
 /* --------------------------------- Helpers -------------------------------- */
 const getTestingFunctionsByRole = <
   TName extends string,
-  TArgs extends any | any[] = RegisterFunctionDefaultArgs["ByRole"]
+  TArgs extends any | any[] = GenerateFunctionDefaultArgs["ByRole"]
 >({
   name,
   matcher,
   convertOptions = (args?: TArgs) => args as ByRoleOptions,
-}: RegisterFunctionOptions<"ByRole", TArgs>): RegisterFunctionReturn<
+}: GenerateFunctionOptions<"ByRole", TArgs>): GenerateFunctionReturn<
   TName,
   TArgs
 > =>
   ({
     [`query${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       queryByRole(container, matcher, convertOptions(userOptions)),
-    [`queryAll${name}s`]: (container: HTMLElement, userOptions?: TArgs) =>
+    [`queryAll${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       queryAllByRole(container, matcher, convertOptions(userOptions)),
     [`find${name}`]: async (container: HTMLElement, userOptions?: TArgs) =>
       await findByRole(container, matcher, convertOptions(userOptions)),
-    [`findAll${name}s`]: async (container: HTMLElement, userOptions?: TArgs) =>
+    [`findAll${name}`]: async (container: HTMLElement, userOptions?: TArgs) =>
       await findAllByRole(container, matcher, convertOptions(userOptions)),
     [`get${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       getByRole(container, matcher, convertOptions(userOptions)),
-    [`getAll${name}s`]: (container: HTMLElement, userOptions?: TArgs) =>
+    [`getAll${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       getAllByRole(container, matcher, convertOptions(userOptions)),
-  } as RegisterFunctionReturn<TName, TArgs>);
+  } as GenerateFunctionReturn<TName, TArgs>);
 
 const getTestingFunctionsWithSelectorMatcherValue = <
   TName extends string,
-  TArgs extends any | any[] = RegisterFunctionDefaultArgs["ByLabelText"]
+  TArgs extends any | any[] = GenerateFunctionDefaultArgs["ByLabelText"]
 >({
   name,
   matcher,
   convertOptions = (args?: TArgs) => args as SelectorMatcherOptions,
-}: RegisterFunctionOptions<"ByLabelText", TArgs>): RegisterFunctionReturn<
+}: GenerateFunctionOptions<"ByLabelText", TArgs>): GenerateFunctionReturn<
   TName,
   TArgs
 > =>
   ({
     [`query${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       queryByLabelText(container, matcher, convertOptions(userOptions)),
-    [`queryAll${name}s`]: (container: HTMLElement, userOptions?: TArgs) =>
+    [`queryAll${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       queryAllByLabelText(container, matcher, convertOptions(userOptions)),
     [`find${name}`]: async (container: HTMLElement, userOptions?: TArgs) =>
       await findByLabelText(container, matcher, convertOptions(userOptions)),
-    [`findAll${name}s`]: async (container: HTMLElement, userOptions?: TArgs) =>
+    [`findAll${name}`]: async (container: HTMLElement, userOptions?: TArgs) =>
       await findAllByLabelText(container, matcher, convertOptions(userOptions)),
     [`get${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       getByLabelText(container, matcher, convertOptions(userOptions)),
-    [`getAll${name}s`]: (container: HTMLElement, userOptions?: TArgs) =>
+    [`getAll${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       getAllByLabelText(container, matcher, convertOptions(userOptions)),
-  } as RegisterFunctionReturn<TName, TArgs>);
+  } as GenerateFunctionReturn<TName, TArgs>);
 
 const getTestingFunctionsWithMatcherValue = <
   TName extends string,
-  TArgs extends any | any[] = RegisterFunctionDefaultArgs["ByDisplayValue"]
+  TArgs extends any | any[] = GenerateFunctionDefaultArgs["ByDisplayValue"]
 >({
   matcher,
   name,
   convertOptions = (args?: TArgs) => args as MatcherOptions,
-}: RegisterFunctionOptions<"ByDisplayValue", TArgs>): RegisterFunctionReturn<
+}: GenerateFunctionOptions<"ByDisplayValue", TArgs>): GenerateFunctionReturn<
   TName,
   TArgs
 > =>
   ({
     [`query${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       queryByDisplayValue(container, matcher, convertOptions(userOptions)),
-    [`queryAll${name}s`]: (container: HTMLElement, userOptions?: TArgs) =>
+    [`queryAll${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       queryAllByDisplayValue(container, matcher, convertOptions(userOptions)),
     [`find${name}`]: async (container: HTMLElement, userOptions?: TArgs) =>
       await findByDisplayValue(container, matcher, convertOptions(userOptions)),
-    [`findAll${name}s`]: async (container: HTMLElement, userOptions?: TArgs) =>
+    [`findAll${name}`]: async (container: HTMLElement, userOptions?: TArgs) =>
       await findAllByDisplayValue(
         container,
         matcher,
@@ -199,6 +217,6 @@ const getTestingFunctionsWithMatcherValue = <
       ),
     [`get${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       getByDisplayValue(container, matcher, convertOptions(userOptions)),
-    [`getAll${name}s`]: (container: HTMLElement, userOptions?: TArgs) =>
+    [`getAll${name}`]: (container: HTMLElement, userOptions?: TArgs) =>
       getAllByDisplayValue(container, matcher, convertOptions(userOptions)),
-  } as RegisterFunctionReturn<TName, TArgs>);
+  } as GenerateFunctionReturn<TName, TArgs>);
